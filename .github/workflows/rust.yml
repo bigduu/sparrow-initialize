@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "master" ]
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   release:
     strategy:
@@ -28,5 +25,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{matrix.os}}
+          name: ${{ matrix.os }}
           path: ${{ github.workspace }}/target/release
