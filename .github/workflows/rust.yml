@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  macos:
+  release:
     strategy:
         matrix:
             os: [ubuntu-latest, windows-latest, macos-latest]
@@ -28,5 +28,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Package
-          path: ${{ github.workspace }}/release
+          name: ${{matrix.os}}
+          path: ${{ github.workspace }}/target/release
