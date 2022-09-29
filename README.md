@@ -52,7 +52,8 @@ if you like the tool, please star the repository, that will be very helpful for 
 > ![.image/img.png](.image/img.png)
 
 3. 确保你的机器上已经安装了 Maven 并设置了环境变量
-   `mvn -v`
+   
+`mvn -v`
 
 > ![.image/img_2.png](.image/img_2.png)
 
