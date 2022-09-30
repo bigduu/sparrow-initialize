@@ -8,6 +8,8 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use futures::future::join_all;
+use tokio::fs::File;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::time::Instant;
 use tracing::{error, info};
@@ -16,16 +18,24 @@ use tracing::{error, info};
 async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt::init();
     let dir = Arc::new(temp_dir().display().to_string());
-    let remote_url = vec!["https://github.com/sparrowzoo/sparrow-bom",
-                          "https://github.com/sparrowzoo/sparrow-shell",
-                          "https://github.com/sparrow-os/sparrow-zoo-bom",
-                          "https://github.com/sparrow-os/sparrow-passport-ddd"];
-    let time1 = clone_from_remote(&dir, remote_url).await;
-
+    let instant = Instant::now();
+    let remote_url = read_address().await?;
+    clone_from_remote(&dir, remote_url).await;
     install_each_repository(&dir).await;
-    let i = time1.elapsed().as_secs_f64();
-    info!("Done .... use {} seconds",i);
+    let elapsed = instant.elapsed().as_secs_f64();
+    info!("Done .... use {} seconds",elapsed);
     Ok(())
+}
+
+async fn read_address<>() -> Result<Vec<String>, Box<dyn Error>> {
+    let result = File::open("config").await?;
+    let reader = BufReader::new(result);
+    let mut lines = reader.lines();
+    let mut results: Vec<String> = vec![];
+    while let Some(line) = lines.next_line().await? {
+        results.push(line);
+    }
+    Ok(results)
 }
 
 async fn install_each_repository(dir: &Arc<String>) {
@@ -54,19 +64,17 @@ async fn window_mvn_install(project_dir: &str) {
     execute(project_dir, "cmd", args).await;
 }
 
-async fn clone_from_remote(dir: &Arc<String>, remote_url: Vec<&'static str>) -> Instant {
+async fn clone_from_remote(dir: &Arc<String>, remote_url: Vec<String>) {
     let mut join_list = vec![];
-    let time1 = Instant::now();
     for repository in remote_url.into_iter() {
-        let dir = Arc::clone(&dir);
+        let dir = Arc::clone(dir);
         let handle = tokio::spawn(async move {
-            let args = vec!["clone", repository];
+            let args = vec!["clone", repository.as_str()];
             execute(dir.as_str(), "git", args).await;
         });
         join_list.push(handle);
     }
     join_all(join_list).await;
-    time1
 }
 
 async fn execute(dir: &str, command: &str, args: Vec<&str>) {
